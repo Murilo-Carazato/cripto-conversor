@@ -1,0 +1,18 @@
+name: Mark Stale Issues and PRs
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Executa diariamente à meia-noite
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: "Esta issue está sendo marcada como stale devido à falta de atividade recente."
+          stale-pr-message: "Este PR está sendo marcado como stale devido à falta de atividade recente."
+          stale-issue-label: "stale"
+          stale-pr-label: "stale"
+          days-before-stale: 30

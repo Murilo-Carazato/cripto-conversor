@@ -1,0 +1,22 @@
+name: "🔧 Tarefa Técnica / Débito"
+description: "Para tarefas de configuração, refatoração, documentação, etc."
+title: "[TASK]: "
+labels: ["chore", "documentation"]
+body:
+  - type: textarea
+    id: task-description
+    attributes:
+      label: "Descrição da Tarefa"
+      description: "Descreva o que precisa ser feito."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: "Checklist de Tarefas"
+      description: "Liste as subtarefas ou itens a serem verificados. Você pode editar esta lista."
+      value: |
+        - [ ] Item 1 a ser concluído
+        - [ ] Item 2 a ser concluído
+        - [ ] Item 3 a ser concluído

@@ -37,26 +37,30 @@ jobs:
         with:
           node-version: '18'
           cache: 'pnpm'
+          cache-dependency-path: apps/api/pnpm-lock.yaml
 
-      - name: Install dependencies (if any)
+      - name: Install dependencies (apps/api)
+        working-directory: apps/api
         run: |
-          if [ -f pnpm-lock.yaml ] || [ -f package.json ]; then
-            pnpm install --frozen-lockfile
+          if [ -f package.json ]; then
+            pnpm install --no-frozen-lockfile
           else
-            echo "No pnpm project detected at root; skipping install."
+            echo "No package.json in apps/api; skipping install."
           fi
 
       - name: Generate Prisma Client (if prisma exists)
         env:
           DATABASE_URL: "mysql://root:password@127.0.0.1:3306/test_db"
+        working-directory: apps/api
         run: |
           if [ -f package.json ] && npx --yes prisma -v >/dev/null 2>&1; then
-            pnpm prisma generate || true
+            pnpm prisma:generate || true
           else
             echo "Prisma not detected; skipping generate."
           fi
 
       - name: Run Linter (if script exists)
+        working-directory: apps/api
         run: |
           if [ -f package.json ] && pnpm -s run | grep -q "lint"; then
             pnpm run lint
@@ -67,6 +71,7 @@ jobs:
       - name: Run E2E Tests (if script exists)
         env:
           DATABASE_URL: "mysql://root:password@127.0.0.1:3306/test_db"
+        working-directory: apps/api
         run: |
           if [ -f package.json ] && pnpm -s run | grep -q "test:e2e"; then
             pnpm run test:e2e

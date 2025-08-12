@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import { auth } from '../middleware/auth';
+import { prisma } from '../../lib/prisma';
+
+export const meRouter = Router();
+
+meRouter.get('/', auth, async (req, res) => {
+  const userId = (req as any).userId as string;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, name: true, createdAt: true },
+  });
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  return res.json({ user });
+});

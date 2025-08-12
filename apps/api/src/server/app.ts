@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './swagger';
 import { healthRouter } from './routes/health';
+import { authRouter } from './routes/auth';
 
 export function buildApp() {
   const app = express();
@@ -14,6 +15,7 @@ export function buildApp() {
 
   // Routes
   app.use('/health', healthRouter);
+  app.use('/auth', authRouter);
 
   // Swagger Docs
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

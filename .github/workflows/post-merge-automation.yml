@@ -1,0 +1,161 @@
+name: Post-merge automation (delete branch + Projects)
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  projects: write
+
+jobs:
+  cleanup-and-project:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update GitHub Project fields for issues closed by this PR
+        uses: actions/github-script@v7
+        env:
+          PROJECT_NUMBER: '19'
+          PROJECT_OWNER: '${{ github.repository_owner }}'
+        with:
+          script: |
+            const prNodeId = context.payload.pull_request.node_id;
+            const projectNumber = process.env.PROJECT_NUMBER;
+            const projectOwner = process.env.PROJECT_OWNER;
+
+            // 1) Fetch closing issues and the Project V2 with fields
+            const query = `
+              query($owner: String!, $name: String!, $number: Int!, $pr: ID!) {
+                repository(owner: $owner, name: $name) { id }
+                organization(login: $owner) { id }
+                user(login: $owner) { id }
+                projectV2(owner: $owner, number: $number) {
+                  id
+                  fields(first: 50) { nodes { id name dataType ... on ProjectV2SingleSelectField { options { id name } } } }
+                }
+                node(id: $pr) {
+                  ... on PullRequest {
+                    id
+                    author { login }
+                    mergedBy { login }
+                    closingIssuesReferences(first: 50) { nodes { id number title labels(first: 50) { nodes { name } } } }
+                  }
+                }
+              }`;
+
+            const [owner, repo] = context.repository.split('/');
+
+            const data = await github.graphql(query, {
+              owner,
+              name: repo,
+              number: parseInt(projectNumber, 10),
+              pr: prNodeId,
+            });
+
+            const project = data.projectV2;
+            if (!project) {
+              core.warning(`Project V2 #${projectNumber} not found for owner ${owner}`);
+              return;
+            }
+
+            const fields = project.fields.nodes;
+            const findField = (name) => fields.find(f => f.name.toLowerCase() === name.toLowerCase());
+
+            const statusField = findField('Status'); // usado apenas para leitura; Status não será alterado aqui
+            const assigneesField = findField('Assignees') || findField('Assignee');
+            const priorityField = findField('Priority');
+            const sizeField = findField('Size');
+            const estimateField = findField('Estimate');
+            const iterationField = findField('Iteration');
+
+            // Não alteramos Status aqui (UI/Project já move para Done)
+
+            const pr = data.node;
+            const mergedBy = pr.mergedBy?.login || pr.author?.login || owner;
+
+            const issues = pr.closingIssuesReferences?.nodes || [];
+            if (issues.length === 0) {
+              core.info('No closing issues for this PR.');
+              return;
+            }
+
+            // Utility mutations
+            const addItemMutation = `mutation($projectId:ID!,$contentId:ID!){ addProjectV2ItemById(input:{projectId:$projectId, contentId:$contentId}) { item { id } } }`;
+            const updateSingleSelect = `mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $optionId:String!){ updateProjectV2ItemFieldValue(input:{projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ singleSelectOptionId:$optionId }}){ projectV2Item { id } } }`;
+            const updateIteration = `mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $iterationId:String!){ updateProjectV2ItemFieldValue(input:{projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ iterationId:$iterationId }}){ projectV2Item { id } } }`;
+            const updateText = `mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $text:String!){ updateProjectV2ItemFieldValue(input:{projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ text:$text }}){ projectV2Item { id } } }`;
+            const updateNumber = `mutation($projectId:ID!, $itemId:ID!, $fieldId:ID!, $number:Float!){ updateProjectV2ItemFieldValue(input:{projectId:$projectId, itemId:$itemId, fieldId:$fieldId, value:{ number:$number }}){ projectV2Item { id } } }`;
+            const updateAssignees = `mutation($itemId:ID!, $assignee:String!) { 
+              updateIssue(input:{id:$itemId, assigneeIds:[]}) { clientMutationId }
+            }`;
+
+            for (const issue of issues) {
+              core.info(`Processing issue #${issue.number} - ${issue.title}`);
+
+              // 2) Add issue to project (or ensure it exists)
+              const addRes = await github.graphql(addItemMutation, { projectId: project.id, contentId: issue.id });
+              const itemId = addRes.addProjectV2ItemById.item.id;
+
+              // 3) Assign you (mergedBy) on the issue
+              try {
+                await github.rest.issues.addAssignees({ owner, repo, issue_number: issue.number, assignees: [mergedBy] });
+              } catch (e) {
+                core.warning(`Could not assign ${mergedBy} to #${issue.number}: ${e.message}`);
+              }
+
+              // 4) Parse labels for Priority/Size/Estimate/Iteration
+              const labelNames = (issue.labels?.nodes || []).map(l => l.name);
+              const getLabelValue = (prefix) => labelNames.find(n => n.toLowerCase().startsWith(prefix.toLowerCase()+':'))?.split(':')[1]?.trim();
+
+              // Priority (single-select)
+              const priorityVal = getLabelValue('priority');
+              if (priorityVal && priorityField?.options) {
+                const opt = priorityField.options.find(o => o.name.toLowerCase() === priorityVal.toLowerCase());
+                if (opt) {
+                  await github.graphql(updateSingleSelect, { projectId: project.id, itemId, fieldId: priorityField.id, optionId: opt.id });
+                }
+              }
+
+              // Size (single-select or number)
+              const sizeVal = getLabelValue('size');
+              if (sizeVal && sizeField?.options) {
+                const opt = sizeField.options.find(o => o.name.toLowerCase() === sizeVal.toLowerCase());
+                if (opt) {
+                  await github.graphql(updateSingleSelect, { projectId: project.id, itemId, fieldId: sizeField.id, optionId: opt.id });
+                }
+              } else if (sizeVal && sizeField?.id) {
+                const num = Number(sizeVal);
+                if (!Number.isNaN(num)) {
+                  await github.graphql(updateNumber, { projectId: project.id, itemId, fieldId: sizeField.id, number: num });
+                }
+              }
+
+              // Estimate (number)
+              const estimateVal = getLabelValue('estimate');
+              if (estimateVal && estimateField?.id) {
+                const num = Number(estimateVal);
+                if (!Number.isNaN(num)) {
+                  await github.graphql(updateNumber, { projectId: project.id, itemId, fieldId: estimateField.id, number: num });
+                }
+              }
+
+              // Iteration (single-select Iteration field)
+              const iterationVal = getLabelValue('iteration');
+              if (iterationVal && iterationField?.options) {
+                const opt = iterationField.options.find(o => o.name.toLowerCase() === iterationVal.toLowerCase());
+                if (opt) {
+                  await github.graphql(updateIteration, { projectId: project.id, itemId, fieldId: iterationField.id, iterationId: opt.id });
+                }
+              }
+
+              // 6) Link PR in the issue via comment
+              const prUrl = context.payload.pull_request.html_url;
+              try {
+                await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: `Fechado por ${prUrl}` });
+              } catch (e) {
+                core.warning(`Could not comment on #${issue.number}: ${e.message}`);
+              }
+            }

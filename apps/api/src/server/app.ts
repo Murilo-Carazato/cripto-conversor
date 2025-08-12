@@ -6,6 +6,7 @@ import { swaggerSpec } from './swagger';
 import { healthRouter } from './routes/health';
 import { authRouter } from './routes/auth';
 import { meRouter } from './routes/me';
+import { convertRouter } from './routes/convert';
 
 export function buildApp() {
   const app = express();
@@ -18,6 +19,7 @@ export function buildApp() {
   app.use('/health', healthRouter);
   app.use('/auth', authRouter);
   app.use('/me', meRouter);
+  app.use('/convert', convertRouter);
 
   // Swagger Docs
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

@@ -124,6 +124,40 @@ const options: swaggerJSDoc.Options = {
           },
         },
       },
+      '/convert': {
+        get: {
+          summary: 'Convert crypto amount using CoinGecko',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'from', in: 'query', required: true, schema: { type: 'string', example: 'bitcoin' } },
+            { name: 'to', in: 'query', required: true, schema: { type: 'string', example: 'brl' } },
+            { name: 'amount', in: 'query', required: false, schema: { type: 'number', example: 1 } }
+          ],
+          responses: {
+            '200': {
+              description: 'Conversion result',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      from: { type: 'string' },
+                      to: { type: 'string' },
+                      amount: { type: 'number' },
+                      rate: { type: 'number' },
+                      result: { type: 'number' }
+                    },
+                    required: ['from', 'to', 'amount', 'rate', 'result'],
+                  },
+                },
+              },
+            },
+            '400': { description: 'Invalid parameters or unsupported pair' },
+            '401': { description: 'Unauthorized' },
+            '502': { description: 'CoinGecko failure' },
+          },
+        },
+      },
     },
   },
   apis: [],

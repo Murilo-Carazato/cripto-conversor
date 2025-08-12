@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
@@ -12,6 +13,15 @@ export function buildApp() {
   const app = express();
 
   app.use(helmet());
+  const corsOptions = {
+    origin: ['http://localhost:5173'],
+    credentials: false,
+    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization']
+  } as const;
+  app.use(cors(corsOptions));
+  // Explicitly handle preflight for all routes
+  app.options('*', cors(corsOptions));
   app.use(express.json());
   app.use(morgan('dev'));
 

@@ -36,8 +36,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
-          cache-dependency-path: apps/api/pnpm-lock.yaml
+          # cache disabled por enquanto para evitar erro quando pnpm-lock.yaml não está presente
 
       - name: Install dependencies (apps/api)
         working-directory: apps/api

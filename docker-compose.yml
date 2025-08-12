@@ -1,0 +1,58 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cripto
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $$MYSQL_USER --password=$$MYSQL_PASSWORD || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    command: ["sh", "-c", "pnpm dev"]
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./.env
+    volumes:
+      - ./apps/api:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    command: ["sh", "-c", "pnpm dev --host 0.0.0.0"]
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./.env
+    volumes:
+      - ./apps/web:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  db_data:

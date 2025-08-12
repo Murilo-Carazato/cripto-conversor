@@ -1,6 +1,9 @@
 # Dev image for API
 FROM node:20-alpine
 
+# System deps required by Prisma on Alpine (musl)
+RUN apk add --no-cache openssl libc6-compat
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 

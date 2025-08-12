@@ -1,4 +1,4 @@
-name: Add PRs to Project 19
+name: Add PRs to Project 19 (non-blocking)
 
 on:
   pull_request_target:
@@ -6,10 +6,14 @@ on:
 
 jobs:
   add-to-project:
+    # Only run if PAT is available; prevents failures on forks and missing secrets
+    if: ${{ secrets.PROJECT_USER_TOKEN != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Add to GitHub Project 19
         uses: actions/add-to-project@v0.5.0
+        continue-on-error: true
         with:
           project-url: https://github.com/users/Murilo-Carazato/projects/19
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # For User Projects V2, a PAT with "project" (classic) and repo scopes is required
+          github-token: ${{ secrets.PROJECT_USER_TOKEN }}

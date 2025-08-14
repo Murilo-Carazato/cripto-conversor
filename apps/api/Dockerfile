@@ -11,11 +11,13 @@ WORKDIR /usr/src/app
 
 # Copy package files and install deps
 COPY package.json pnpm-lock.yaml* ./
+# Ensure Prisma schema exists before install because postinstall runs `prisma generate`
+COPY prisma ./prisma
 RUN pnpm install
 
 # Copy source
 COPY tsconfig.json ./
-COPY prisma ./prisma
+# prisma already copied above for postinstall
 COPY src ./src
 
 # Generate Prisma client

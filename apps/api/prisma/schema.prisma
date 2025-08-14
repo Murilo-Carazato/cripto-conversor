@@ -16,4 +16,29 @@ model User {
   passwordHash String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  conversions Conversion[]
+  favorites   Favorite[]
+}
+
+model Conversion {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  crypto     String
+  amount     Float
+  brlRate    Float
+  brlResult  Float
+  usdRate    Float
+  usdResult  Float
+  createdAt  DateTime @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  crypto    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, crypto])
 }

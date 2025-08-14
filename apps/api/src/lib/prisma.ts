@@ -1,5 +1,3 @@
-import Prisma from '@prisma/client';
-
-const { PrismaClient } = Prisma as unknown as { PrismaClient: new () => any };
+import { PrismaClient } from '@prisma/client';
 
 export const prisma = new PrismaClient();

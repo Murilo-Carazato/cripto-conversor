@@ -111,15 +111,15 @@ export default function App() {
             <TextField label="Senha" type="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} fullWidth />
             {!showRegister ? (
               <Stack direction="row" spacing={1}>
-                <Button variant="contained" onClick={() => loginMut.mutate()} disabled={loginMut.isLoading}>
-                  {loginMut.isLoading ? 'Entrando…' : 'Entrar'}
+                <Button variant="contained" onClick={() => loginMut.mutate()} disabled={loginMut.isPending}>
+                  {loginMut.isPending ? 'Entrando…' : 'Entrar'}
                 </Button>
                 <Button variant="text" onClick={() => setShowRegister(true)}>Cadastrar</Button>
               </Stack>
             ) : (
               <Stack direction="row" spacing={1}>
-                <Button variant="contained" onClick={() => registerMut.mutate()} disabled={registerMut.isLoading}>
-                  {registerMut.isLoading ? 'Cadastrando…' : 'Cadastrar'}
+                <Button variant="contained" onClick={() => registerMut.mutate()} disabled={registerMut.isPending}>
+                  {registerMut.isPending ? 'Cadastrando…' : 'Cadastrar'}
                 </Button>
                 <Button variant="text" onClick={() => setShowRegister(false)}>Voltar ao Login</Button>
               </Stack>
@@ -136,7 +136,7 @@ export default function App() {
                 onChange={setFrom}
                 cryptos={cryptos}
                 favorites={favoritesQuery.data}
-                toggleDisabled={addFavMut.isLoading || removeFavMut.isLoading}
+                toggleDisabled={addFavMut.isPending || removeFavMut.isPending}
                 onToggleFavorite={(cryptoId, isFavorite) => {
                   return isFavorite ? removeFavMut.mutate(cryptoId) : addFavMut.mutate(cryptoId);
                 }}
@@ -144,7 +144,7 @@ export default function App() {
             </Stack>
             <AmountInput value={amount} onChange={setAmount} />
             <Stack direction="row" spacing={1}>
-              <ConvertButton onClick={() => convertMut.mutate()} loading={convertMut.isLoading} />
+              <ConvertButton onClick={() => convertMut.mutate()} loading={convertMut.isPending} />
               <Button variant="outlined" onClick={handleLogout}>Sair</Button>
             </Stack>
             {error && <Alert severity="error">{error}</Alert>}

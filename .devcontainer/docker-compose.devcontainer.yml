@@ -1,0 +1,15 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    init: true
+    volumes:
+      - .:/workspaces/cripto-conversor
+    working_dir: /workspaces/cripto-conversor
+    # Optional: bring these up automatically via devcontainer.json runServices
+    depends_on:
+      - db
+      - adminer
+      - api
+      - web

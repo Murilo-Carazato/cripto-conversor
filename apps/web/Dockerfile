@@ -1,4 +1,10 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
+
+# Add tools required by IDEs and dev tooling on Debian (glibc)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       bash curl ca-certificates git openssh-client procps \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate

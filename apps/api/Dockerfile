@@ -1,8 +1,11 @@
 # Dev image for API
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
-# System deps required by Prisma on Alpine (musl)
-RUN apk add --no-cache openssl libc6-compat
+# System deps required for dev tooling and Prisma on Debian (glibc)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       bash curl ca-certificates openssl git openssh-client procps \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate

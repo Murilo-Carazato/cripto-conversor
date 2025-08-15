@@ -1,0 +1,31 @@
+{
+  "name": "cripto-conversor (dev)",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "docker-compose.devcontainer.yml"
+  ],
+  "service": "dev",
+  "workspaceFolder": "/workspaces/cripto-conversor",
+  "runServices": ["db", "adminer", "api", "web"],
+  "overrideCommand": true,
+  "remoteUser": "node",
+  "postCreateCommand": "bash -lc 'sudo chown -R node:node /workspaces/cripto-conversor || true; set -e; corepack enable && corepack prepare pnpm@9.0.0 --activate && pnpm config set store-dir /home/node/.pnpm-store && pnpm config set virtual-store-dir .pnpm && pnpm -C apps/api install && pnpm -C apps/web install'",
+  "postStartCommand": "bash -lc 'sudo chown -R node:node /workspaces/cripto-conversor || true'",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "Prisma.prisma",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.exclude": {"**/.pnpm-store": true, "**/.pnpm": true, "**/node_modules": true}
+      }
+    }
+  }
+}

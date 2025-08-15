@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions, type Secret } from 'jsonwebtoken';
 import { prisma } from '../../lib/prisma';
 import { env } from '../../lib/env';
 
@@ -34,7 +34,11 @@ router.post('/register', async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({ data: { email, name, passwordHash } });
 
-  const token = jwt.sign({ sub: user.id }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN ?? '1d' });
+  const token = jwt.sign(
+    { sub: user.id },
+    env.JWT_SECRET as Secret,
+    { expiresIn: (env.JWT_EXPIRES_IN ?? '1d') } as SignOptions
+  );
 
   return res.status(201).json({
     user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt },
@@ -59,7 +63,11 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ message: 'Invalid credentials' });
   }
 
-  const token = jwt.sign({ sub: user.id }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN ?? '1d' });
+  const token = jwt.sign(
+    { sub: user.id },
+    env.JWT_SECRET as Secret,
+    { expiresIn: (env.JWT_EXPIRES_IN ?? '1d') } as SignOptions
+  );
 
   return res.json({
     user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt },

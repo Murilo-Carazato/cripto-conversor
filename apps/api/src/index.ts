@@ -13,7 +13,7 @@ import { env } from './lib/env';
 import { buildApp } from './server/app';
 
 const app = buildApp();
-const port = Number(env.API_PORT ?? 3333);
+const port = Number(env.API_PORT);
 
 app.listen(port, () => {
   // eslint-disable-next-line no-console

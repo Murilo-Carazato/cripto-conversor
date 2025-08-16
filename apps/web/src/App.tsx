@@ -1,17 +1,13 @@
 import React from 'react';
 import { Container, Paper, Typography, TextField, Button, Stack, Box, Alert, Divider, List, ListItem, ListItemText, IconButton } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiAddFavorite, apiRemoveFavorite, type ConversionItem, type FavoriteItem, type LoginRegisterResponse } from './api';
+import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiGetCryptos, apiAddFavorite, apiRemoveFavorite, type ConversionItem, type FavoriteItem, type LoginRegisterResponse } from './api';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CryptoSelect from './components/CryptoSelect';
 import AmountInput from './components/AmountInput';
 import ConvertButton from './components/ConvertButton';
 
-const cryptos = [
-  { id: 'bitcoin', label: 'Bitcoin (BTC)' },
-  { id: 'ethereum', label: 'Ethereum (ETH)' },
-  { id: 'tether', label: 'Tether (USDT)' },
-];
+// Criptos serão carregadas dinamicamente da API
 
 // Conversion result will always be shown in BRL and USD per requirements
 
@@ -36,6 +32,22 @@ export default function App() {
     queryFn: () => apiGetHistory(20),
     enabled: !!userEmail,
   });
+
+  const cryptosQuery = useQuery({
+    queryKey: ['cryptos'],
+    queryFn: () => apiGetCryptos({ limit: 200 }),
+  });
+
+  const cryptoOptions = React.useMemo(
+    () => (cryptosQuery.data ?? []).map((c) => ({ id: c.id, label: c.symbol ? `${c.name} (${c.symbol})` : c.name })),
+    [cryptosQuery.data]
+  );
+
+  React.useEffect(() => {
+    if (cryptoOptions.length > 0 && !cryptoOptions.some((c) => c.id === from)) {
+      setFrom(cryptoOptions[0].id);
+    }
+  }, [cryptoOptions, from]);
 
   const loginMut = useMutation<LoginRegisterResponse, Error>({
     mutationFn: () => apiLogin({ email, password }),
@@ -134,7 +146,7 @@ export default function App() {
                 label="Cripto"
                 value={from}
                 onChange={setFrom}
-                cryptos={cryptos}
+                cryptos={cryptoOptions}
                 favorites={favoritesQuery.data}
                 toggleDisabled={addFavMut.isPending || removeFavMut.isPending}
                 onToggleFavorite={(cryptoId, isFavorite) => {
@@ -186,7 +198,7 @@ export default function App() {
           ) : (favoritesQuery.data && favoritesQuery.data.length > 0 ? (
             <List dense>
               {favoritesQuery.data.map((f: FavoriteItem) => {
-                const label = cryptos.find((c) => c.id === f.cryptoId)?.label ?? f.cryptoId;
+                const label = cryptoOptions.find((c) => c.id === f.cryptoId)?.label ?? f.cryptoId;
                 return (
                   <ListItem key={f.id}
                     secondaryAction={

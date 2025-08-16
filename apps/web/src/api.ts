@@ -25,6 +25,17 @@ export async function apiRegister({ email, password, name }: { email: string; pa
   return res.json() as Promise<LoginRegisterResponse>;
 }
 
+export type CryptoItem = { id: string; name: string; symbol: string | null };
+
+export async function apiGetCryptos(params?: { q?: string; limit?: number }) {
+  const url = new URL(`${BASE_URL}/cryptos`);
+  if (params?.q) url.searchParams.set('q', params.q);
+  if (typeof params?.limit === 'number') url.searchParams.set('limit', String(params.limit));
+  const res = await fetch(url.toString(), { headers: { accept: 'application/json' } });
+  if (!res.ok) throw new Error('Falha ao buscar criptomoedas');
+  return res.json() as Promise<CryptoItem[]>;
+}
+
 export type ConversionItem = {
   id: string;
   userId: string;

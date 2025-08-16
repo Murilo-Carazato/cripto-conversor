@@ -167,7 +167,7 @@ export default function App() {
                 {historyQuery.data?.map((h: ConversionItem) => (
                   <ListItem key={h.id}>
                     <ListItemText
-                      primary={`${h.crypto} × ${h.amount}`}
+                      primary={`${h.cryptoId} × ${h.amount}`}
                       secondary={`BRL ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(h.brlResult)} | USD ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(h.usdResult)} — ${new Date(h.createdAt).toLocaleString()}`}
                     />
                   </ListItem>
@@ -186,19 +186,19 @@ export default function App() {
           ) : (favoritesQuery.data && favoritesQuery.data.length > 0 ? (
             <List dense>
               {favoritesQuery.data.map((f: FavoriteItem) => {
-                const label = cryptos.find((c) => c.id === f.crypto)?.label ?? f.crypto;
+                const label = cryptos.find((c) => c.id === f.cryptoId)?.label ?? f.cryptoId;
                 return (
                   <ListItem key={f.id}
                     secondaryAction={
                       <Stack direction="row" spacing={1}>
-                        <Button size="small" variant="outlined" onClick={() => setFrom(f.crypto)}>Selecionar</Button>
-                        <IconButton edge="end" aria-label="remover favorito" onClick={() => removeFavMut.mutate(f.crypto)}>
+                        <Button size="small" variant="outlined" onClick={() => setFrom(f.cryptoId)}>Selecionar</Button>
+                        <IconButton edge="end" aria-label="remover favorito" onClick={() => removeFavMut.mutate(f.cryptoId)}>
                           <DeleteOutlineIcon />
                         </IconButton>
                       </Stack>
                     }
                   >
-                    <ListItemText primary={label} secondary={f.crypto} />
+                    <ListItemText primary={label} secondary={f.cryptoId} />
                   </ListItem>
                 );
               })}

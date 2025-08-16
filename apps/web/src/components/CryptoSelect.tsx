@@ -29,7 +29,7 @@ export default function CryptoSelect({
   toggleDisabled,
 }: Props) {
   const isFav = React.useCallback(
-    (id: string) => !!favorites?.some((f) => f.crypto === id),
+    (id: string) => !!favorites?.some((f) => f.cryptoId === id),
     [favorites]
   );
 

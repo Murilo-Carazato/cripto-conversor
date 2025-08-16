@@ -28,7 +28,7 @@ export async function apiRegister({ email, password, name }: { email: string; pa
 export type ConversionItem = {
   id: string;
   userId: string;
-  crypto: string;
+  cryptoId: string;
   amount: number;
   brlRate: number;
   brlResult: number;
@@ -47,7 +47,7 @@ export async function apiGetHistory(take = 20) {
   return res.json() as Promise<ConversionItem[]>;
 }
 
-export type FavoriteItem = { id: string; userId: string; crypto: string; createdAt: string };
+export type FavoriteItem = { id: string; userId: string; cryptoId: string; createdAt: string };
 
 export async function apiGetFavorites() {
   const token = localStorage.getItem('token');
@@ -57,40 +57,26 @@ export async function apiGetFavorites() {
   return res.json() as Promise<FavoriteItem[]>;
 }
 
-export async function apiAddFavorite(crypto: string) {
+export async function apiAddFavorite(cryptoId: string) {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('Não autenticado');
   const res = await fetch(`${BASE_URL}/favorites`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ crypto }),
+    body: JSON.stringify({ cryptoId }),
   });
   if (!res.ok) throw new Error('Falha ao favoritar');
   return res.json() as Promise<FavoriteItem>;
 }
 
-export async function apiRemoveFavorite(crypto: string) {
+export async function apiRemoveFavorite(cryptoId: string) {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('Não autenticado');
-  const res = await fetch(`${BASE_URL}/favorites/${crypto}`, {
+  const res = await fetch(`${BASE_URL}/favorites/${cryptoId}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Falha ao desfavoritar');
-}
-
-export async function apiConvert({ from, to, amount }: { from: string; to: string; amount: number }) {
-  const token = localStorage.getItem('token');
-  if (!token) throw new Error('Não autenticado');
-  const url = new URL(`${BASE_URL}/convert`);
-  url.searchParams.set('from', from);
-  url.searchParams.set('to', to);
-  url.searchParams.set('amount', String(amount));
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error('Conversão falhou');
-  return res.json();
 }
 
 export async function apiConvertDual({ from, amount }: { from: string; amount: number }) {

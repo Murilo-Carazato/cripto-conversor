@@ -13,8 +13,15 @@ convertRouter.get('/dual', auth, async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Parâmetros inválidos. Use: from, amount>0' });
     }
 
+    // Validate crypto exists in local catalog
+    const exists = await prisma.crypto.findUnique({ where: { id: from } });
+    if (!exists) {
+      return res.status(400).json({ message: 'Criptomoeda inválida' });
+    }
+
     const fetchRate = async (to: 'brl'|'usd') => {
-      const url = new URL('https://api.coingecko.com/api/v3/simple/price');
+      const base = process.env.COINGECKO_BASE || 'https://api.coingecko.com/api/v3';
+      const url = new URL(`${base}/simple/price`);
       url.searchParams.set('ids', from);
       url.searchParams.set('vs_currencies', to);
       const resp = await fetch(url.toString(), { headers: { accept: 'application/json' } });
@@ -32,7 +39,7 @@ convertRouter.get('/dual', auth, async (req: Request, res: Response) => {
     // Persist history
     const userId = (req as any).userId as string;
     await prisma.conversion.create({
-      data: { userId, crypto: from, amount, brlRate, brlResult, usdRate, usdResult },
+      data: { userId, cryptoId: from, amount, brlRate, brlResult, usdRate, usdResult },
     });
 
     return res.json({ from, amount, brl: { rate: brlRate, result: brlResult }, usd: { rate: usdRate, result: usdResult } });

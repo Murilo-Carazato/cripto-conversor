@@ -17,15 +17,17 @@ favoritesRouter.get('/', auth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /favorites { crypto }
+// POST /favorites { cryptoId }
 favoritesRouter.post('/', auth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as string;
-    const crypto = String(req.body?.crypto || '').toLowerCase();
-    if (!crypto) return res.status(400).json({ message: 'crypto é obrigatório' });
+    const cryptoId = String(req.body?.cryptoId || '').toLowerCase();
+    if (!cryptoId) return res.status(400).json({ message: 'cryptoId é obrigatório' });
+    const exists = await prisma.crypto.findUnique({ where: { id: cryptoId } });
+    if (!exists) return res.status(400).json({ message: 'Criptomoeda inválida' });
     const fav = await prisma.favorite.upsert({
-      where: { userId_crypto: { userId, crypto } },
-      create: { userId, crypto },
+      where: { userId_cryptoId: { userId, cryptoId } },
+      create: { userId, cryptoId },
       update: {},
     });
     return res.status(201).json(fav);
@@ -36,13 +38,13 @@ favoritesRouter.post('/', auth, async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /favorites/:crypto
-favoritesRouter.delete('/:crypto', auth, async (req: Request, res: Response) => {
+// DELETE /favorites/:cryptoId
+favoritesRouter.delete('/:cryptoId', auth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as string;
-    const crypto = String(req.params.crypto || '').toLowerCase();
-    if (!crypto) return res.status(400).json({ message: 'crypto é obrigatório' });
-    await prisma.favorite.delete({ where: { userId_crypto: { userId, crypto } } });
+    const cryptoId = String(req.params.cryptoId || '').toLowerCase();
+    if (!cryptoId) return res.status(400).json({ message: 'cryptoId é obrigatório' });
+    await prisma.favorite.delete({ where: { userId_cryptoId: { userId, cryptoId } } });
     return res.status(204).end();
   } catch (e) {
     // eslint-disable-next-line no-console

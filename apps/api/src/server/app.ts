@@ -10,6 +10,7 @@ import { meRouter } from './routes/me';
 import { convertRouter } from './routes/convert';
 import { historyRouter } from './routes/history';
 import { favoritesRouter } from './routes/favorites.js';
+import { cryptosRouter } from './routes/cryptos.js';
 
 export function buildApp() {
   const app = express();
@@ -34,6 +35,7 @@ export function buildApp() {
   app.use('/convert', convertRouter);
   app.use('/history', historyRouter);
   app.use('/favorites', favoritesRouter);
+  app.use('/cryptos', cryptosRouter);
 
   // Swagger Docs
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

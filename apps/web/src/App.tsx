@@ -1,17 +1,13 @@
 import React from 'react';
 import { Container, Paper, Typography, TextField, Button, Stack, Box, Alert, Divider, List, ListItem, ListItemText, IconButton } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiAddFavorite, apiRemoveFavorite, type ConversionItem, type FavoriteItem, type LoginRegisterResponse } from './api';
+import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiGetCryptos, apiAddFavorite, apiRemoveFavorite, type ConversionItem, type FavoriteItem, type LoginRegisterResponse } from './api';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CryptoSelect from './components/CryptoSelect';
 import AmountInput from './components/AmountInput';
 import ConvertButton from './components/ConvertButton';
 
-const cryptos = [
-  { id: 'bitcoin', label: 'Bitcoin (BTC)' },
-  { id: 'ethereum', label: 'Ethereum (ETH)' },
-  { id: 'tether', label: 'Tether (USDT)' },
-];
+// Criptos serão carregadas dinamicamente da API
 
 // Conversion result will always be shown in BRL and USD per requirements
 
@@ -36,6 +32,22 @@ export default function App() {
     queryFn: () => apiGetHistory(20),
     enabled: !!userEmail,
   });
+
+  const cryptosQuery = useQuery({
+    queryKey: ['cryptos'],
+    queryFn: () => apiGetCryptos({ limit: 200 }),
+  });
+
+  const cryptoOptions = React.useMemo(
+    () => (cryptosQuery.data ?? []).map((c) => ({ id: c.id, label: c.symbol ? `${c.name} (${c.symbol})` : c.name })),
+    [cryptosQuery.data]
+  );
+
+  React.useEffect(() => {
+    if (cryptoOptions.length > 0 && !cryptoOptions.some((c) => c.id === from)) {
+      setFrom(cryptoOptions[0].id);
+    }
+  }, [cryptoOptions, from]);
 
   const loginMut = useMutation<LoginRegisterResponse, Error>({
     mutationFn: () => apiLogin({ email, password }),
@@ -134,7 +146,7 @@ export default function App() {
                 label="Cripto"
                 value={from}
                 onChange={setFrom}
-                cryptos={cryptos}
+                cryptos={cryptoOptions}
                 favorites={favoritesQuery.data}
                 toggleDisabled={addFavMut.isPending || removeFavMut.isPending}
                 onToggleFavorite={(cryptoId, isFavorite) => {
@@ -167,7 +179,7 @@ export default function App() {
                 {historyQuery.data?.map((h: ConversionItem) => (
                   <ListItem key={h.id}>
                     <ListItemText
-                      primary={`${h.crypto} × ${h.amount}`}
+                      primary={`${h.cryptoId} × ${h.amount}`}
                       secondary={`BRL ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(h.brlResult)} | USD ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(h.usdResult)} — ${new Date(h.createdAt).toLocaleString()}`}
                     />
                   </ListItem>
@@ -186,19 +198,19 @@ export default function App() {
           ) : (favoritesQuery.data && favoritesQuery.data.length > 0 ? (
             <List dense>
               {favoritesQuery.data.map((f: FavoriteItem) => {
-                const label = cryptos.find((c) => c.id === f.crypto)?.label ?? f.crypto;
+                const label = cryptoOptions.find((c) => c.id === f.cryptoId)?.label ?? f.cryptoId;
                 return (
                   <ListItem key={f.id}
                     secondaryAction={
                       <Stack direction="row" spacing={1}>
-                        <Button size="small" variant="outlined" onClick={() => setFrom(f.crypto)}>Selecionar</Button>
-                        <IconButton edge="end" aria-label="remover favorito" onClick={() => removeFavMut.mutate(f.crypto)}>
+                        <Button size="small" variant="outlined" onClick={() => setFrom(f.cryptoId)}>Selecionar</Button>
+                        <IconButton edge="end" aria-label="remover favorito" onClick={() => removeFavMut.mutate(f.cryptoId)}>
                           <DeleteOutlineIcon />
                         </IconButton>
                       </Stack>
                     }
                   >
-                    <ListItemText primary={label} secondary={f.crypto} />
+                    <ListItemText primary={label} secondary={f.cryptoId} />
                   </ListItem>
                 );
               })}

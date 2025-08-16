@@ -1,11 +1,7 @@
 import React from 'react';
-import { Container, Paper, Typography, TextField, Button, Stack, Box, Alert, Divider, List, ListItem, ListItemText, IconButton } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiGetCryptos, apiAddFavorite, apiRemoveFavorite, type ConversionItem, type FavoriteItem, type LoginRegisterResponse } from './api';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import CryptoSelect from './components/CryptoSelect';
-import AmountInput from './components/AmountInput';
-import ConvertButton from './components/ConvertButton';
+import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiGetCryptos, apiAddFavorite, apiRemoveFavorite, type LoginRegisterResponse } from './api';
+import AppView from './components/AppView';
 
 // Criptos serão carregadas dinamicamente da API
 
@@ -109,118 +105,36 @@ export default function App() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Paper sx={{ p: 3 }} elevation={3}>
-        <Typography variant="h5" gutterBottom>
-          Cripto Conversor
-        </Typography>
-
-        {!userEmail ? (
-          <Stack spacing={2}>
-            <Typography variant="subtitle1">{showRegister ? 'Cadastro' : 'Login'}</Typography>
-            {error && <Alert severity="error">{error}</Alert>}
-            <TextField label="Email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} fullWidth />
-            <TextField label="Senha" type="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} fullWidth />
-            {!showRegister ? (
-              <Stack direction="row" spacing={1}>
-                <Button variant="contained" onClick={() => loginMut.mutate()} disabled={loginMut.isPending}>
-                  {loginMut.isPending ? 'Entrando…' : 'Entrar'}
-                </Button>
-                <Button variant="text" onClick={() => setShowRegister(true)}>Cadastrar</Button>
-              </Stack>
-            ) : (
-              <Stack direction="row" spacing={1}>
-                <Button variant="contained" onClick={() => registerMut.mutate()} disabled={registerMut.isPending}>
-                  {registerMut.isPending ? 'Cadastrando…' : 'Cadastrar'}
-                </Button>
-                <Button variant="text" onClick={() => setShowRegister(false)}>Voltar ao Login</Button>
-              </Stack>
-            )}
-          </Stack>
-        ) : (
-          <Stack spacing={2}>
-            <Alert severity="success">Logado como {userEmail}</Alert>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CryptoSelect
-                labelId="from-label"
-                label="Cripto"
-                value={from}
-                onChange={setFrom}
-                cryptos={cryptoOptions}
-                favorites={favoritesQuery.data}
-                toggleDisabled={addFavMut.isPending || removeFavMut.isPending}
-                onToggleFavorite={(cryptoId, isFavorite) => {
-                  return isFavorite ? removeFavMut.mutate(cryptoId) : addFavMut.mutate(cryptoId);
-                }}
-              />
-            </Stack>
-            <AmountInput value={amount} onChange={setAmount} />
-            <Stack direction="row" spacing={1}>
-              <ConvertButton onClick={() => convertMut.mutate()} loading={convertMut.isPending} />
-              <Button variant="outlined" onClick={handleLogout}>Sair</Button>
-            </Stack>
-            {error && <Alert severity="error">{error}</Alert>}
-            {result && (
-              <Box>
-                <Typography variant="subtitle1">Resultado</Typography>
-                <Typography variant="body2">BRL (taxa): {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.brl.rate)}</Typography>
-                <Typography variant="h6">BRL: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.brl.result)}</Typography>
-                <Typography variant="body2">USD (rate): {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result.usd.rate)}</Typography>
-                <Typography variant="h6">USD: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result.usd.result)}</Typography>
-              </Box>
-            )}
-
-            <Divider />
-            <Typography variant="h6">Histórico</Typography>
-            {historyQuery.isLoading ? (
-              <Typography variant="body2">Carregando…</Typography>
-            ) : (
-              <List dense>
-                {historyQuery.data?.map((h: ConversionItem) => (
-                  <ListItem key={h.id}>
-                    <ListItemText
-                      primary={`${h.cryptoId} × ${h.amount}`}
-                      secondary={`BRL ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(h.brlResult)} | USD ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(h.usdResult)} — ${new Date(h.createdAt).toLocaleString()}`}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </Stack>
-        )}
-      </Paper>
-
-      {userEmail && (
-        <Paper sx={{ p: 3, mt: 2 }} elevation={3}>
-          <Typography variant="h6" gutterBottom>Meus Favoritos</Typography>
-          {favoritesQuery.isLoading ? (
-            <Typography variant="body2">Carregando…</Typography>
-          ) : (favoritesQuery.data && favoritesQuery.data.length > 0 ? (
-            <List dense>
-              {favoritesQuery.data.map((f: FavoriteItem) => {
-                const label = cryptoOptions.find((c) => c.id === f.cryptoId)?.label ?? f.cryptoId;
-                return (
-                  <ListItem key={f.id}
-                    secondaryAction={
-                      <Stack direction="row" spacing={1}>
-                        <Button size="small" variant="outlined" onClick={() => setFrom(f.cryptoId)}>Selecionar</Button>
-                        <IconButton edge="end" aria-label="remover favorito" onClick={() => removeFavMut.mutate(f.cryptoId)}>
-                          <DeleteOutlineIcon />
-                        </IconButton>
-                      </Stack>
-                    }
-                  >
-                    <ListItemText primary={label} secondary={f.cryptoId} />
-                  </ListItem>
-                );
-              })}
-            </List>
-          ) : (
-            <Typography variant="body2">Você ainda não favoritou nenhuma criptomoeda.</Typography>
-          ))}
-        </Paper>
-      )}
-
-    </Container>
+    <AppView
+      userEmail={userEmail}
+      showRegister={showRegister}
+      onToggleRegister={setShowRegister}
+      email={email}
+      password={password}
+      onChangeEmail={setEmail}
+      onChangePassword={setPassword}
+      cryptos={cryptoOptions}
+      from={from}
+      onChangeFrom={setFrom}
+      amount={amount}
+      onChangeAmount={setAmount}
+      favorites={favoritesQuery.data}
+      favoritesLoading={favoritesQuery.isLoading}
+      history={historyQuery.data}
+      historyLoading={historyQuery.isLoading}
+      onLogin={() => loginMut.mutate()}
+      onRegister={() => registerMut.mutate()}
+      onConvert={() => convertMut.mutate()}
+      onLogout={handleLogout}
+      onToggleFavorite={(cryptoId, isFavorite) => isFavorite ? removeFavMut.mutate(cryptoId) : addFavMut.mutate(cryptoId)}
+      onRemoveFavorite={(cryptoId) => removeFavMut.mutate(cryptoId)}
+      onSelectFavorite={(cryptoId) => setFrom(cryptoId)}
+      loginPending={loginMut.isPending}
+      registerPending={registerMut.isPending}
+      convertPending={convertMut.isPending}
+      toggleDisabled={addFavMut.isPending || removeFavMut.isPending}
+      error={error}
+      result={result}
+    />
   );
 }

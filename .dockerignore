@@ -1,0 +1,52 @@
+# Global ignore for monorepo root
+# Keep build contexts lean when building from the repository root
+
+# Dependencies and package manager caches
+node_modules
+.pnpm
+.pnpm-store
+
+# Build outputs and coverage
+Dist
+DIST
+dist
+build
+coverage
+
+# Caches
+.cache
+.eslintcache
+
+# Editor/OS files
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files (keep example)
+.env
+.env.*
+!.env.example
+
+# VCS
+.git
+.gitattributes
+.gitignore
+
+# Framework-specific caches (safe to ignore even if unused)
+.next
+.nuxt
+.turbo
+.svelte-kit
+.storybook
+
+# Temporary files
+.tmp
+tmp
+temp

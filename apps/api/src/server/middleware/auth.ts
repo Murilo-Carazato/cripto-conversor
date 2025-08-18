@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { env } from '../../lib/env';
+import { env } from '../../lib/env.js';
 
 export function auth(req: Request, res: Response, next: NextFunction) {
   try {

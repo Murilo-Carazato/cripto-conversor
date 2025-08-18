@@ -1,8 +1,8 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { auth } from '../middleware/auth';
-import { prisma } from '../../lib/prisma';
+import { auth } from '../middleware/auth.js';
+import { prisma } from '../../lib/prisma.js';
 import { z } from 'zod';
-import { validate } from '../middleware/validate';
+import { validate } from '../middleware/validate.js';
 
 export const favoritesRouter = Router();
 

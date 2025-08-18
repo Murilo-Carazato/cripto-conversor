@@ -1,7 +1,7 @@
 import pino from 'pino';
 import { pinoHttp } from 'pino-http';
 import crypto from 'crypto';
-import { env } from '../../lib/env';
+import { env } from '../../lib/env.js';
 import type { IncomingMessage, ServerResponse } from 'http';
 
 export const logger = pino({ level: env.LOG_LEVEL });

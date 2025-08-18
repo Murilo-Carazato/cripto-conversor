@@ -9,8 +9,8 @@ const __dirname = path.dirname(__filename);
 // Load env from project root .env (../../.env)
 dotenv({ path: path.resolve(__dirname, '../../..', '.env') });
 
-import { env } from './lib/env';
-import { buildApp } from './server/app';
+import { env } from './lib/env.js';
+import { buildApp } from './server/app.js';
 
 const app = buildApp();
 // Railway define a variável PORT automaticamente; use-a quando disponível

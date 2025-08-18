@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { ZodSchema } from 'zod';
-import { HttpError } from './error';
+import { HttpError } from './error.js';
 
 export function validate({ body, query, params }: { body?: ZodSchema<any>; query?: ZodSchema<any>; params?: ZodSchema<any>; }) {
   return (req: Request, _res: Response, next: NextFunction) => {

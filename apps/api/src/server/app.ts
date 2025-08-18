@@ -2,18 +2,18 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './swagger';
-import { healthRouter } from './routes/health';
-import { authRouter } from './routes/auth';
-import { meRouter } from './routes/me';
-import { convertRouter } from './routes/convert';
-import { historyRouter } from './routes/history';
+import { swaggerSpec } from './swagger.js';
+import { healthRouter } from './routes/health.js';
+import { authRouter } from './routes/auth.js';
+import { meRouter } from './routes/me.js';
+import { convertRouter } from './routes/convert.js';
+import { historyRouter } from './routes/history.js';
 import { favoritesRouter } from './routes/favorites.js';
 import { cryptosRouter } from './routes/cryptos.js';
-import { env } from '../lib/env';
-import { httpLogger } from './middleware/logger';
-import { generalLimiter, authLimiter } from './middleware/rateLimit';
-import { errorHandler } from './middleware/error';
+import { env } from '../lib/env.js';
+import { httpLogger } from './middleware/logger.js';
+import { generalLimiter, authLimiter } from './middleware/rateLimit.js';
+import { errorHandler } from './middleware/error.js';
 
 export function buildApp() {
   const app = express();

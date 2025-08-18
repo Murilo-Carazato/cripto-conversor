@@ -2,9 +2,9 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt, { type SignOptions, type Secret } from 'jsonwebtoken';
-import { prisma } from '../../lib/prisma';
-import { env } from '../../lib/env';
-import { validate } from '../middleware/validate';
+import { prisma } from '../../lib/prisma.js';
+import { env } from '../../lib/env.js';
+import { validate } from '../middleware/validate.js';
 
 const router = Router();
 

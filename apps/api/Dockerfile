@@ -1,4 +1,4 @@
-# Dev image for API
+# Production image for API
 FROM node:20-bookworm-slim
 
 # System deps required for dev tooling and Prisma on Debian (glibc)
@@ -16,19 +16,22 @@ WORKDIR /usr/src/app
 COPY package.json pnpm-lock.yaml* ./
 # Ensure Prisma schema exists before install because postinstall runs `prisma generate`
 COPY prisma ./prisma
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 # Copy source
 COPY tsconfig.json ./
 # prisma already copied above for postinstall
 COPY src ./src
 
-# Generate Prisma client
+# Ensure Prisma client is generated (postinstall already runs it)
 RUN pnpm prisma:generate || true
 
-ENV NODE_ENV=development
+# Build TypeScript to dist/
+RUN pnpm build
+
+ENV NODE_ENV=production
 ENV API_PORT=3001
 EXPOSE 3001
 
-# Default command overridden by compose
-CMD ["pnpm", "dev"]
+# Start in production (runs prestart to apply Prisma migrations)
+CMD ["pnpm", "start"]

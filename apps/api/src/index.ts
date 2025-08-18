@@ -13,7 +13,8 @@ import { env } from './lib/env';
 import { buildApp } from './server/app';
 
 const app = buildApp();
-const port = Number(env.API_PORT);
+// Railway define a variável PORT automaticamente; use-a quando disponível
+const port = Number(process.env.PORT ?? env.API_PORT);
 
 app.listen(port, () => {
   // eslint-disable-next-line no-console

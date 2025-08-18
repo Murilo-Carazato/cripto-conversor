@@ -12,43 +12,6 @@
  - Frontend: React + TypeScript, Vite, MUI, TanStack Query
  - DevOps: Docker Compose, Dev Container (VS Code)
 
- ## Arquitetura
- - `apps/api`: API REST com autenticação, catálogo de criptos (CoinGecko) e conversão.
- - `apps/web`: frontend React consumindo a API.
-
- ## Como rodar (Docker)
- 1. Copie o `.env` de exemplo e ajuste se necessário:
-    ```bash
-    cp .env.example .env
-    ```
- 2. Suba os serviços:
-    ```bash
-    docker compose up -d
-    ```
- 3. Acesse:
-    - Frontend: http://localhost:5173
-    - API Health: http://localhost:3001/health
-    - Swagger: http://localhost:3001/docs
-    - Adminer: http://localhost:8080
-
- > Dica (WSL): clone o repo dentro do filesystem do WSL (ex.: `~/projects/cripto-conversor`) e evite `/mnt/*` para melhor desempenho de I/O.
-
- > Mudou o `.env`? Recrie os serviços para aplicar as variáveis:
- > ```bash
- > docker compose up -d --force-recreate --no-deps api
- > docker compose up -d --force-recreate --no-deps web
- > ```
-
- ## Como rodar (sem Docker)
- Requer Node 20+ e pnpm.
- ```bash
- pnpm -w install
- # API
- pnpm -C apps/api dev
- # Web
- pnpm -C apps/web dev
- ```
-
  ## Variáveis de ambiente
  Edite o arquivo `.env` na raiz. Exemplo em `/.env.example`.
  - Backend
@@ -70,11 +33,6 @@
    - `GET /cryptos`, `POST /cryptos/sync`
    - `GET /favorites`, `POST /favorites`, `DELETE /favorites/{cryptoId}`
    - `GET /history`
-
- ## Troubleshooting
- - Use `docker compose ps` e `docker compose logs -f api|web` para diagnosticar.
- - Em WSL, evite `/mnt/*`; prefira `~/projects/...`.
- - Builds lentos? `.dockerignore` otimizados na raiz e em `apps/*` reduzem o contexto.
 
  ## Kanban
  - Project: Iterative Development

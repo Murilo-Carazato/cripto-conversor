@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, Paper, Typography, TextField, Button, Stack, Box, Alert, Divider, List, ListItem, ListItemText, IconButton, Snackbar, type AlertColor } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiGetCryptos, apiAddFavorite, apiRemoveFavorite, type ConversionItem, type FavoriteItem, type LoginRegisterResponse, ApiError, type CryptoItem } from './api';
+import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiGetCryptos, apiAddFavorite, apiRemoveFavorite, apiSyncCryptos, type ConversionItem, type FavoriteItem, type LoginRegisterResponse, ApiError, type CryptoItem } from './api';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CryptoSelect from './components/CryptoSelect';
 import AmountInput from './components/AmountInput';
@@ -80,6 +80,12 @@ export default function App() {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       queryClient.invalidateQueries({ queryKey: ['history'] });
+      // Sincroniza o catálogo de criptomoedas após login, sem bloquear a UI
+      void apiSyncCryptos(200)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['cryptos'] });
+        })
+        .catch(() => { /* ignora falhas de sync para não afetar o login */ });
       showToast('Login realizado com sucesso!', 'success');
     },
     onError: (e: unknown) => {

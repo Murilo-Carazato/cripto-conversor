@@ -15,6 +15,7 @@ vi.mock('./api', () => {
     apiGetCryptos: vi.fn(async () => ([{ id: 'bitcoin', name: 'Bitcoin', symbol: 'BTC' }])),
     apiAddFavorite: vi.fn(async () => ({ id: 'f1', userId: 'u1', cryptoId: 'bitcoin', createdAt: new Date().toISOString() })),
     apiRemoveFavorite: vi.fn(async () => undefined),
+    apiSyncCryptos: vi.fn(async () => ({ message: 'Sincronização concluída', synced: 200, total: 200 })),
   };
 });
 

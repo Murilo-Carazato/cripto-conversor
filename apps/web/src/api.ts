@@ -115,6 +115,17 @@ export async function apiRemoveFavorite(cryptoId: string) {
   });
 }
 
+export async function apiSyncCryptos(limit = 200) {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('Não autenticado');
+  const { data } = await http<{ message: string; synced: number; total: number }>(`${BASE_URL}/cryptos/sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ limit }),
+  });
+  return data;
+}
+
 export async function apiConvertDual({ from, amount }: { from: string; amount: number }) {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('Não autenticado');

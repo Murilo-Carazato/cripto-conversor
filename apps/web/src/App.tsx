@@ -1,7 +1,7 @@
 import React from 'react';
-import { Container, Paper, Typography, TextField, Button, Stack, Box, Alert, Divider, List, ListItem, ListItemText, IconButton } from '@mui/material';
+import { Container, Paper, Typography, TextField, Button, Stack, Box, Alert, Divider, List, ListItem, ListItemText, IconButton, Snackbar, type AlertColor } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiGetCryptos, apiAddFavorite, apiRemoveFavorite, type ConversionItem, type FavoriteItem, type LoginRegisterResponse } from './api';
+import { apiLogin, apiRegister, apiConvertDual, apiGetHistory, apiGetFavorites, apiGetCryptos, apiAddFavorite, apiRemoveFavorite, type ConversionItem, type FavoriteItem, type LoginRegisterResponse, ApiError, type CryptoItem } from './api';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CryptoSelect from './components/CryptoSelect';
 import AmountInput from './components/AmountInput';
@@ -22,32 +22,54 @@ export default function App() {
   const [showRegister, setShowRegister] = React.useState(false);
   const queryClient = useQueryClient();
 
-  const favoritesQuery = useQuery({
+  const [snack, setSnack] = React.useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'info' });
+  const showToast = (message: string, severity: AlertColor = 'info') => setSnack({ open: true, message, severity });
+  const closeToast = () => setSnack((s) => ({ ...s, open: false }));
+
+  function formatApiError(e: unknown, fallback: string) {
+    const isApi = e instanceof ApiError;
+    const msg = isApi ? (e as ApiError).message : (e as any)?.message || fallback;
+    const rid = isApi ? (e as ApiError).requestId : undefined;
+    return rid ? `${msg} (id: ${rid})` : msg;
+  }
+
+  const favoritesQuery = useQuery<FavoriteItem[], Error>({
     queryKey: ['favorites'],
     queryFn: apiGetFavorites,
     enabled: !!userEmail,
   });
-  const historyQuery = useQuery({
+  const historyQuery = useQuery<ConversionItem[], Error>({
     queryKey: ['history'],
-    queryFn: () => apiGetHistory(20),
+    queryFn: () => apiGetHistory(20) as Promise<ConversionItem[]>,
     enabled: !!userEmail,
   });
 
-  const cryptosQuery = useQuery({
+  const cryptosQuery = useQuery<CryptoItem[], Error>({
     queryKey: ['cryptos'],
-    queryFn: () => apiGetCryptos({ limit: 200 }),
+    queryFn: () => apiGetCryptos({ limit: 200 }) as Promise<CryptoItem[]>,
   });
 
-  const cryptoOptions = React.useMemo(
-    () => (cryptosQuery.data ?? []).map((c) => ({ id: c.id, label: c.symbol ? `${c.name} (${c.symbol})` : c.name })),
-    [cryptosQuery.data]
-  );
+  const cryptoOptions = React.useMemo(() => {
+    const list: CryptoItem[] = cryptosQuery.data ?? [];
+    return list.map((c: CryptoItem) => ({ id: c.id, label: c.symbol ? `${c.name} (${c.symbol})` : c.name }));
+  }, [cryptosQuery.data]);
 
   React.useEffect(() => {
     if (cryptoOptions.length > 0 && !cryptoOptions.some((c) => c.id === from)) {
       setFrom(cryptoOptions[0].id);
     }
   }, [cryptoOptions, from]);
+
+  // Show toasts for query errors (React Query v5: no onError in useQuery)
+  React.useEffect(() => {
+    if (favoritesQuery.isError) showToast(formatApiError(favoritesQuery.error, 'Falha ao buscar favoritos'), 'error');
+  }, [favoritesQuery.isError]);
+  React.useEffect(() => {
+    if (historyQuery.isError) showToast(formatApiError(historyQuery.error, 'Falha ao buscar histórico'), 'error');
+  }, [historyQuery.isError]);
+  React.useEffect(() => {
+    if (cryptosQuery.isError) showToast(formatApiError(cryptosQuery.error, 'Falha ao buscar criptos'), 'error');
+  }, [cryptosQuery.isError]);
 
   const loginMut = useMutation<LoginRegisterResponse, Error>({
     mutationFn: () => apiLogin({ email, password }),
@@ -58,8 +80,13 @@ export default function App() {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       queryClient.invalidateQueries({ queryKey: ['history'] });
+      showToast('Login realizado com sucesso!', 'success');
     },
-    onError: () => setError('Falha no login. Verifique credenciais.'),
+    onError: (e: unknown) => {
+      const msg = formatApiError(e, 'Falha no login. Verifique credenciais.');
+      setError(msg);
+      showToast(msg, 'error');
+    },
   });
 
   const registerMut = useMutation<LoginRegisterResponse, Error>({
@@ -72,8 +99,13 @@ export default function App() {
       setShowRegister(false);
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       queryClient.invalidateQueries({ queryKey: ['history'] });
+      showToast('Cadastro realizado com sucesso!', 'success');
     },
-    onError: () => setError('Falha no cadastro. Verifique dados.'),
+    onError: (e: unknown) => {
+      const msg = formatApiError(e, 'Falha no cadastro. Verifique dados.');
+      setError(msg);
+      showToast(msg, 'error');
+    },
   });
 
   const convertMut = useMutation<{ brl: { rate: number; result: number }; usd: { rate: number; result: number } }, Error>({
@@ -82,22 +114,31 @@ export default function App() {
       setResult({ brl: data.brl, usd: data.usd });
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['history'] });
+      showToast('Conversão realizada!', 'success');
     },
-    onError: (e: Error) => setError((e as any)?.message || 'Erro na conversão'),
+    onError: (e: unknown) => {
+      const msg = formatApiError(e, 'Erro na conversão');
+      setError(msg);
+      showToast(msg, 'error');
+    },
   });
 
   const addFavMut = useMutation({
     mutationFn: (crypto: string) => apiAddFavorite(crypto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      showToast('Adicionado aos favoritos', 'success');
     },
+    onError: (e: unknown) => showToast(formatApiError(e, 'Falha ao favoritar'), 'error'),
   });
 
   const removeFavMut = useMutation({
     mutationFn: (crypto: string) => apiRemoveFavorite(crypto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      showToast('Removido dos favoritos', 'success');
     },
+    onError: (e: unknown) => showToast(formatApiError(e, 'Falha ao desfavoritar'), 'error'),
   });
 
   const handleLogout = () => {
@@ -220,6 +261,12 @@ export default function App() {
           ))}
         </Paper>
       )}
+
+      <Snackbar open={snack.open} autoHideDuration={5000} onClose={closeToast} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={closeToast} severity={snack.severity} variant="filled" sx={{ width: '100%' }}>
+          {snack.message}
+        </Alert>
+      </Snackbar>
 
     </Container>
   );

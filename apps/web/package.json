@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 5173"
+    "preview": "vite preview --host 0.0.0.0 --port 5173",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
@@ -23,7 +26,12 @@
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "typescript": "^5.5.4",
-    "vite": "^5.4.2"
+    "vite": "^5.4.2",
+    "vitest": "^1.6.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@testing-library/jest-dom": "^6.4.8",
+    "jsdom": "^24.0.0"
   },
   "packageManager": "pnpm@9.0.0+sha512.b4106707c7225b1748b61595953ccbebff97b54ad05d002aa3635f633b9c53cd666f7ce9b8bc44704f1fa048b9a49b55371ab2d9e9d667d1efe2ef1514bcd513"
 }

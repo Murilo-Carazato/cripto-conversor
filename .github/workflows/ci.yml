@@ -30,50 +30,37 @@ jobs:
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          # cache disabled por enquanto para evitar erro quando pnpm-lock.yaml não está presente
+          node-version: '20'
+          cache: 'pnpm'
 
-      - name: Install dependencies (apps/api)
+      - name: Install dependencies (workspaces)
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Generate Prisma Client (API)
         working-directory: apps/api
+        env:
+          DATABASE_URL: "mysql://root:password@127.0.0.1:3306/test_db"
         run: |
           if [ -f package.json ]; then
-            pnpm install --no-frozen-lockfile
-          else
-            echo "No package.json in apps/api; skipping install."
-          fi
-
-      - name: Generate Prisma Client (if prisma exists)
-        env:
-          DATABASE_URL: "mysql://root:password@127.0.0.1:3306/test_db"
-        working-directory: apps/api
-        run: |
-          if [ -f package.json ] && npx --yes prisma -v >/dev/null 2>&1; then
             pnpm prisma:generate || true
-          else
-            echo "Prisma not detected; skipping generate."
           fi
 
-      - name: Run Linter (if script exists)
-        working-directory: apps/api
-        run: |
-          if [ -f package.json ] && pnpm -s run | grep -q "lint"; then
-            pnpm run lint
-          else
-            echo "No lint script; skipping."
-          fi
+      - name: Typecheck (workspaces)
+        run: pnpm -r --if-present typecheck
 
-      - name: Run E2E Tests (if script exists)
+      - name: Lint (workspaces)
+        run: pnpm -r --if-present lint
+
+      - name: Run Tests (workspaces)
         env:
+          # Ensures API tests can connect if they need DB
           DATABASE_URL: "mysql://root:password@127.0.0.1:3306/test_db"
-        working-directory: apps/api
-        run: |
-          if [ -f package.json ] && pnpm -s run | grep -q "test:e2e"; then
-            pnpm run test:e2e
-          else
-            echo "No test:e2e script; skipping."
-          fi
+        run: pnpm -r --if-present test
+
+      - name: Docker build
+        run: docker compose build

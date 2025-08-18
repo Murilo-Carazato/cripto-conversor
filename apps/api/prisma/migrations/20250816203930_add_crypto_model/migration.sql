@@ -1,4 +1,3 @@
--- CreateTable
 CREATE TABLE `Crypto` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
@@ -8,8 +7,6 @@ CREATE TABLE `Crypto` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- AddForeignKey
 ALTER TABLE `Conversion` ADD CONSTRAINT `Conversion_crypto_fkey` FOREIGN KEY (`crypto`) REFERENCES `Crypto`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE `Favorite` ADD CONSTRAINT `Favorite_crypto_fkey` FOREIGN KEY (`crypto`) REFERENCES `Crypto`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

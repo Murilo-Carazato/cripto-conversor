@@ -23,7 +23,6 @@ export function buildApp() {
   const allowedOrigins = (env.CORS_ORIGIN?.split(',').map(s => s.trim()).filter(Boolean)) ?? ['http://localhost:5173'];
   const corsOptions = {
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Allow non-browser requests (no Origin header)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes('*')) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
@@ -35,9 +34,7 @@ export function buildApp() {
     exposedHeaders: ['X-Request-Id'],
   } as Parameters<typeof cors>[0];
   app.use(cors(corsOptions));
-  // Explicitly handle preflight for all routes
   app.options('*', cors(corsOptions));
-  // Ensure X-Request-Id is available to clients
   app.use((req, res, next) => {
     try {
       const id = (req as any).id;
@@ -48,7 +45,6 @@ export function buildApp() {
   app.use(express.json());
   app.use(generalLimiter);
 
-  // Routes
   app.use('/health', healthRouter);
   app.use('/auth', authLimiter, authRouter);
   app.use('/me', meRouter);
@@ -57,15 +53,12 @@ export function buildApp() {
   app.use('/favorites', favoritesRouter);
   app.use('/cryptos', cryptosRouter);
 
-  // Swagger Docs
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-  // Not found handler
   app.use((req, res) => {
     res.status(404).json({ message: 'Not Found' });
   });
 
-  // Global error handler
   app.use(errorHandler);
 
   return app;

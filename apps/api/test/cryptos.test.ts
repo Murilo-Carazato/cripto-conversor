@@ -1,7 +1,6 @@
 import request from 'supertest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock prisma before importing app
 vi.mock('../src/lib/prisma', () => {
   return {
     prisma: {

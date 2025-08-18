@@ -14,7 +14,6 @@ const favParams = z.object({
   cryptoId: z.string().min(1).transform((s) => s.toLowerCase()),
 });
 
-// GET /favorites -> list user's favorites
 favoritesRouter.get('/', auth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).userId as string;
@@ -26,7 +25,6 @@ favoritesRouter.get('/', auth, async (req: Request, res: Response, next: NextFun
   }
 });
 
-// POST /favorites { cryptoId }
 favoritesRouter.post('/', auth, validate({ body: favBody }), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).userId as string;
@@ -45,7 +43,6 @@ favoritesRouter.post('/', auth, validate({ body: favBody }), async (req: Request
   }
 });
 
-// DELETE /favorites/:cryptoId
 favoritesRouter.delete('/:cryptoId', auth, validate({ params: favParams }), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).userId as string;

@@ -11,8 +11,6 @@ const listQuery = z.object({
   limit: z.coerce.number().int().min(1).max(500).default(100),
 });
 
-// GET /cryptos?q=bit&limit=100
-// Reads cryptos from the local DB for performance and FK integrity
 cryptosRouter.get('/', validate({ query: listQuery }), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { q: qRaw, limit } = req.query as any;
@@ -42,8 +40,6 @@ cryptosRouter.get('/', validate({ query: listQuery }), async (req: Request, res:
   }
 });
 
-// POST /cryptos/sync { limit?: number }
-// Sync top N coins from CoinGecko into local DB
 const syncBody = z.object({ limit: z.coerce.number().int().min(1).max(1000).default(200) });
 
 cryptosRouter.post('/sync', auth, validate({ body: syncBody }), async (req: Request, res: Response, next: NextFunction) => {
@@ -52,7 +48,7 @@ cryptosRouter.post('/sync', auth, validate({ body: syncBody }), async (req: Requ
     const { limit } = req.body as any;
     const target = limit;
 
-    const perPage = 250; // API max per_page is 250
+    const perPage = 250;
     let page = 1;
     let stored = 0;
 
@@ -80,7 +76,6 @@ cryptosRouter.post('/sync', auth, validate({ body: syncBody }), async (req: Requ
       const data = (await resp.json()) as Array<{ id: string; name: string; symbol: string }>;
       if (!Array.isArray(data) || data.length === 0) break;
 
-      // Upsert each coin into DB
       for (const { id, name, symbol } of data) {
         await prisma.crypto.upsert({
           where: { id },

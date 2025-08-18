@@ -16,7 +16,6 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
   try {
     (req as any).log?.error({ err, requestId: (req as any).id }, 'Unhandled error');
   } catch {
-    // noop
   }
   return res.status(status).json({ message, requestId: (req as any).id });
 }

@@ -19,11 +19,9 @@ async function http<T = unknown>(input: RequestInfo | URL, init?: RequestInit): 
       const json = await res.json();
       message = json?.message || message;
     } catch {
-      // ignore body parse errors
     }
     throw new ApiError(message, { status: res.status, requestId });
   }
-  // try parse JSON if present
   let data: any = undefined;
   const ct = res.headers.get('content-type') || '';
   if (ct.includes('application/json')) {

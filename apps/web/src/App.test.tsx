@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Mock API module used by App
 vi.mock('./api', () => {
   return {
     ApiError: class ApiError extends Error { constructor(message: string, public init?: any) { super(message); this.name = 'ApiError'; } },
@@ -37,7 +36,7 @@ describe('App - Fluxo de Login', () => {
     const btn = await screen.findByRole('button', { name: /entrar/i });
     await userEvent.click(btn);
 
-    // Confirma estado logado (mais estável no CI)
+    // Confirma estado logado
     expect(await screen.findByText(/Logado como/i)).toBeInTheDocument();
 
     // Token e email salvos
@@ -57,7 +56,7 @@ describe('App - Fluxo de Login', () => {
     const convertBtn = await screen.findByRole('button', { name: /converter/i });
     await userEvent.click(convertBtn);
 
-    // Resultados renderizados
+    // Resultados
     expect(await screen.findByText(/BRL:/i)).toBeInTheDocument();
     expect(await screen.findByText(/USD:/i)).toBeInTheDocument();
   });

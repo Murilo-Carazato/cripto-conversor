@@ -7,10 +7,6 @@ import CryptoSelect from './components/CryptoSelect';
 import AmountInput from './components/AmountInput';
 import ConvertButton from './components/ConvertButton';
 
-// Criptos serão carregadas dinamicamente da API
-
-// Conversion result will always be shown in BRL and USD per requirements
-
 export default function App() {
   const [email, setEmail] = React.useState('murilo@gmail.com');
   const [password, setPassword] = React.useState('123456');
@@ -59,8 +55,7 @@ export default function App() {
       setFrom(cryptoOptions[0].id);
     }
   }, [cryptoOptions, from]);
-
-  // Show toasts for query errors (React Query v5: no onError in useQuery)
+  
   React.useEffect(() => {
     if (favoritesQuery.isError) showToast(formatApiError(favoritesQuery.error, 'Falha ao buscar favoritos'), 'error');
   }, [favoritesQuery.isError]);

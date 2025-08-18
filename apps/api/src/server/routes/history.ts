@@ -10,7 +10,6 @@ const historyQuery = z.object({
   take: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-// GET /history?take=20
 historyRouter.get('/', auth, validate({ query: historyQuery }), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).userId as string;

@@ -7,7 +7,7 @@ const options = {
       title: 'Cripto-Conversor API',
       version: '0.1.0',
     },
-    servers: [{ url: 'http://localhost:3001' }],
+    servers: [{ url: '/' }],
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -61,12 +61,66 @@ const options = {
           },
           required: ['id', 'name'],
         },
+        Favorite: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'fav_123' },
+            userId: { type: 'string', example: 'user_123' },
+            cryptoId: { type: 'string', example: 'bitcoin' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'userId', 'cryptoId', 'createdAt'],
+        },
+        Conversion: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'conv_123' },
+            userId: { type: 'string', example: 'user_123' },
+            cryptoId: { type: 'string', example: 'bitcoin' },
+            amount: { type: 'number', example: 1 },
+            brlRate: { type: 'number', example: 250000 },
+            brlResult: { type: 'number', example: 250000 },
+            usdRate: { type: 'number', example: 50000 },
+            usdResult: { type: 'number', example: 50000 },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          required: ['id', 'userId', 'cryptoId', 'amount', 'brlRate', 'brlResult', 'usdRate', 'usdResult', 'createdAt'],
+        },
+        FavoriteCreateBody: {
+          type: 'object',
+          properties: {
+            cryptoId: { type: 'string', example: 'bitcoin' },
+          },
+          required: ['cryptoId'],
+        },
+        ErrorMessage: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Mensagem de erro' },
+          },
+          required: ['message'],
+        },
+      },
+      responses: {
+        BadRequest: {
+          description: 'Bad Request',
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorMessage' } } },
+        },
+        Unauthorized: {
+          description: 'Unauthorized',
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorMessage' } } },
+        },
+        InternalError: {
+          description: 'Internal Server Error',
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorMessage' } } },
+        },
       },
     },
     paths: {
       '/auth/register': {
         post: {
           summary: 'Register a new user',
+          tags: ['Auth'],
           requestBody: {
             required: true,
             content: {
@@ -84,13 +138,14 @@ const options = {
                 },
               },
             },
-            '409': { description: 'Email already exists' },
+            '409': { description: 'Email already exists', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorMessage' } } } },
           },
         },
       },
       '/auth/login': {
         post: {
           summary: 'Login',
+          tags: ['Auth'],
           requestBody: {
             required: true,
             content: {
@@ -108,13 +163,14 @@ const options = {
                 },
               },
             },
-            '401': { description: 'Invalid credentials' },
+            '401': { $ref: '#/components/responses/Unauthorized' },
           },
         },
       },
       '/me': {
         get: {
           summary: 'Get authenticated user',
+          tags: ['Auth'],
           security: [{ bearerAuth: [] }],
           responses: {
             '200': {
@@ -129,13 +185,14 @@ const options = {
                 },
               },
             },
-            '401': { description: 'Unauthorized' },
+            '401': { $ref: '#/components/responses/Unauthorized' },
           },
         },
       },
       '/convert': {
         get: {
           summary: 'Convert crypto amount using CoinGecko',
+          tags: ['Conversion'],
           security: [{ bearerAuth: [] }],
           parameters: [
             { name: 'from', in: 'query', required: true, schema: { type: 'string', example: 'bitcoin' } },
@@ -161,8 +218,8 @@ const options = {
                 },
               },
             },
-            '400': { description: 'Invalid parameters or unsupported pair' },
-            '401': { description: 'Unauthorized' },
+            '400': { $ref: '#/components/responses/BadRequest' },
+            '401': { $ref: '#/components/responses/Unauthorized' },
             '502': { description: 'CoinGecko failure' },
           },
         },
@@ -170,6 +227,7 @@ const options = {
       '/cryptos': {
         get: {
           summary: 'Listar criptomoedas do catálogo local',
+          tags: ['Cryptos'],
           parameters: [
             { name: 'q', in: 'query', required: false, schema: { type: 'string', example: 'bit' } },
             { name: 'limit', in: 'query', required: false, schema: { type: 'integer', example: 100, minimum: 1, maximum: 500 } },
@@ -190,6 +248,7 @@ const options = {
       '/cryptos/sync': {
         post: {
           summary: 'Sincronizar criptomoedas a partir da CoinGecko para o catálogo local',
+          tags: ['Cryptos'],
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: false,
@@ -221,9 +280,74 @@ const options = {
                 },
               },
             },
-            '401': { description: 'Não autorizado' },
+            '401': { $ref: '#/components/responses/Unauthorized' },
             '502': { description: 'Falha ao buscar dados na CoinGecko' },
-            '500': { description: 'Erro ao sincronizar criptomoedas' },
+            '500': { $ref: '#/components/responses/InternalError' },
+          },
+        },
+      },
+      '/favorites': {
+        get: {
+          summary: 'Listar favoritos do usuário autenticado',
+          tags: ['Favorites'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': {
+              description: 'Lista de favoritos',
+              content: {
+                'application/json': {
+                  schema: { type: 'array', items: { $ref: '#/components/schemas/Favorite' } },
+                },
+              },
+            },
+            '401': { $ref: '#/components/responses/Unauthorized' },
+            '500': { $ref: '#/components/responses/InternalError' },
+          },
+        },
+        post: {
+          summary: 'Adicionar um favorito',
+          tags: ['Favorites'],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/FavoriteCreateBody' } } },
+          },
+          responses: {
+            '201': { description: 'Favorito criado', content: { 'application/json': { schema: { $ref: '#/components/schemas/Favorite' } } } },
+            '400': { $ref: '#/components/responses/BadRequest' },
+            '401': { $ref: '#/components/responses/Unauthorized' },
+            '500': { $ref: '#/components/responses/InternalError' },
+          },
+        },
+      },
+      '/favorites/{cryptoId}': {
+        delete: {
+          summary: 'Remover favorito por cryptoId',
+          tags: ['Favorites'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'cryptoId', in: 'path', required: true, schema: { type: 'string', example: 'bitcoin' } },
+          ],
+          responses: {
+            '204': { description: 'Removido' },
+            '400': { $ref: '#/components/responses/BadRequest' },
+            '401': { $ref: '#/components/responses/Unauthorized' },
+            '500': { $ref: '#/components/responses/InternalError' },
+          },
+        },
+      },
+      '/history': {
+        get: {
+          summary: 'Histórico de conversões do usuário',
+          tags: ['History'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'take', in: 'query', required: false, schema: { type: 'integer', example: 20, minimum: 1, maximum: 100 } },
+          ],
+          responses: {
+            '200': { description: 'Lista de conversões', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/Conversion' } } } } },
+            '401': { $ref: '#/components/responses/Unauthorized' },
+            '500': { $ref: '#/components/responses/InternalError' },
           },
         },
       },

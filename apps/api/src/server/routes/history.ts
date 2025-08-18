@@ -1,14 +1,20 @@
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { auth } from '../middleware/auth';
 import { prisma } from '../../lib/prisma';
+import { z } from 'zod';
+import { validate } from '../middleware/validate';
 
 export const historyRouter = Router();
 
+const historyQuery = z.object({
+  take: z.coerce.number().int().min(1).max(100).default(20),
+});
+
 // GET /history?take=20
-historyRouter.get('/', auth, async (req: Request, res: Response) => {
+historyRouter.get('/', auth, validate({ query: historyQuery }), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).userId as string;
-    const take = Math.min(Math.max(Number(req.query.take || 20), 1), 100);
+    const { take } = req.query as any;
     const items = await prisma.conversion.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -16,8 +22,7 @@ historyRouter.get('/', auth, async (req: Request, res: Response) => {
     });
     return res.json(items);
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('History route error:', e);
-    return res.status(500).json({ message: 'Erro ao buscar histórico' });
+    (req as any).log?.error({ err: e }, 'History route error');
+    return next(e);
   }
 });

@@ -8,64 +8,74 @@
  Conversor de criptomoedas (MVP) com monorepo (`apps/api`, `apps/web`).
 
  ## Stack
- - Backend: Node.js + TypeScript (build para JS), Express, Prisma (MySQL), Zod
- - Frontend: React + TypeScript, MUI, TanStack Query
- - DevOps: Docker Compose, GitHub Actions (CI), GitHub Projects
+ - Backend: Node.js + TypeScript (Express), Prisma (MySQL), Zod
+ - Frontend: React + TypeScript, Vite, MUI, TanStack Query
+ - DevOps: Docker Compose, Dev Container (VS Code)
+
+ ## Arquitetura
+ - `apps/api`: API REST com autenticação, catálogo de criptos (CoinGecko) e conversão.
+ - `apps/web`: frontend React consumindo a API.
 
  ## Como rodar (Docker)
- 1. Crie o `.env` na raiz a partir de `.env.example`.
- 2. Suba banco e Adminer:
+ 1. Copie o `.env` de exemplo e ajuste se necessário:
     ```bash
-    docker compose up -d db adminer
+    cp .env.example .env
     ```
- 3. Adminer: http://localhost:8080 (Servidor: `db`, Usuário: `app`, Senha: `app`, Base: `cripto`).
- 4. API: veja seção "Backend (Dia 2)" para rodar via Docker.
+ 2. Suba os serviços:
+    ```bash
+    docker compose up -d
+    ```
+ 3. Acesse:
+    - Frontend: http://localhost:5173
+    - API Health: http://localhost:3001/health
+    - Swagger: http://localhost:3001/docs
+    - Adminer: http://localhost:8080
+
+ > Dica (WSL): clone o repo dentro do filesystem do WSL (ex.: `~/projects/cripto-conversor`) e evite `/mnt/*` para melhor desempenho de I/O.
+
+ > Mudou o `.env`? Recrie os serviços para aplicar as variáveis:
+ > ```bash
+ > docker compose up -d --force-recreate --no-deps api
+ > docker compose up -d --force-recreate --no-deps web
+ > ```
+
+ ## Como rodar (sem Docker)
+ Requer Node 20+ e pnpm.
+ ```bash
+ pnpm -w install
+ # API
+ pnpm -C apps/api dev
+ # Web
+ pnpm -C apps/web dev
+ ```
 
  ## Variáveis de ambiente
- Crie `.env` na raiz (baseado em `.env.example`):
- ```env
- # Porta da API (opcional)
- API_PORT=3333
- # URL do MySQL (padrão do docker-compose)
- DATABASE_URL="mysql://app:app@db:3306/cripto"
- ```
+ Edite o arquivo `.env` na raiz. Exemplo em `/.env.example`.
+ - Backend
+   - `API_PORT` (default 3001)
+   - `DATABASE_URL` (ex.: `mysql://app:app@db:3306/cripto`)
+   - `SHADOW_DATABASE_URL` (opcional, melhora diffs)
+   - `JWT_SECRET`, `JWT_EXPIRES_IN`
+   - `COINGECKO_BASE` (default: `https://api.coingecko.com/api/v3`)
+   - `CORS_ORIGIN` (ex.: `http://localhost:5173,http://127.0.0.1:5173`)
+ - Frontend
+   - `VITE_API_URL` (ex.: `http://localhost:3001`)
 
- ## Estrutura
- ```
- apps/
-   api/   # backend (a adicionar)
-   web/   # frontend (a adicionar)
- .github/
-   workflows/ci.yml
-   issues.json
-   ruleset.json
- scripts/
-   create_labels.sh
-   create_issues.sh
-   add_issues_to_project.sh
- ```
+ ## API Docs (Swagger)
+ - Abrir em: `http://localhost:3001/docs`
+ - Autenticação: Bearer token (rotas protegidas como `/me`, `/favorites`, `/cryptos/sync`).
+ - Rotas principais:
+   - `POST /auth/register`, `POST /auth/login`, `GET /me`
+   - `GET /convert`
+   - `GET /cryptos`, `POST /cryptos/sync`
+   - `GET /favorites`, `POST /favorites`, `DELETE /favorites/{cryptoId}`
+   - `GET /history`
+
+ ## Troubleshooting
+ - Use `docker compose ps` e `docker compose logs -f api|web` para diagnosticar.
+ - Em WSL, evite `/mnt/*`; prefira `~/projects/...`.
+ - Builds lentos? `.dockerignore` otimizados na raiz e em `apps/*` reduzem o contexto.
 
  ## Kanban
  - Project: Iterative Development
  - Issues criadas via `/.github/issues.json` e scripts em `scripts/`.
-
- ## Backend (Dia 2)
-- Rodar local (dev):
-  ```bash
-  pnpm -C apps/api install
-  pnpm -C apps/api dev
-  ```
- - Healthcheck: `GET http://localhost:3001/health`
- - Docs Swagger: `http://localhost:3001/docs`
- - Prisma (DB):
-   ```bash
-   pnpm -C apps/api prisma:generate
-   pnpm -C apps/api prisma:migrate
-   pnpm -C apps/api prisma:studio
-   ```
-  - Rodar via Docker (sem Node local):
-    ```bash
-    docker compose up -d api
-    # logs (Ctrl+C para sair)
-    docker compose logs -f api
-    ```

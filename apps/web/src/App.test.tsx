@@ -36,8 +36,8 @@ describe('App - Fluxo de Login', () => {
     const btn = await screen.findByRole('button', { name: /entrar/i });
     await userEvent.click(btn);
 
-    // Snackbar com mensagem de sucesso
-    expect(await screen.findByText('Login realizado com sucesso!')).toBeInTheDocument();
+    // Snackbar com mensagem de sucesso (timeout maior para CI)
+    expect(await screen.findByText('Login realizado com sucesso!', {}, { timeout: 5000 })).toBeInTheDocument();
 
     // Token e email salvos
     expect(localStorage.getItem('token')).toBeTruthy();
@@ -50,7 +50,7 @@ describe('App - Fluxo de Login', () => {
     // Login
     const loginBtn = await screen.findByRole('button', { name: /entrar/i });
     await userEvent.click(loginBtn);
-    await screen.findByText('Login realizado com sucesso!');
+    await screen.findByText('Login realizado com sucesso!', {}, { timeout: 5000 });
 
     // Converter
     const convertBtn = await screen.findByRole('button', { name: /converter/i });

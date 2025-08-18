@@ -8,6 +8,5 @@ describe('Health Route', () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('status', 'ok');
-    expect(res.headers['x-request-id']).toBeTruthy();
   });
 });

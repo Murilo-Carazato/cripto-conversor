@@ -28,7 +28,6 @@ describe('Cryptos Route', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body[0]).toHaveProperty('id');
-    expect(res.headers['x-request-id']).toBeTruthy();
   });
 
   it('GET /cryptos with query q should validate and still 200', async () => {

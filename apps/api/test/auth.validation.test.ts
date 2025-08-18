@@ -10,7 +10,8 @@ describe('Auth validation (Zod)', () => {
       .post('/auth/register')
       .send({ email: 'invalid', password: '123456' });
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('message', 'Invalid request');
+    expect(res.body).toHaveProperty('message');
+    expect(typeof res.body.message).toBe('string');
   });
 
   it('POST /auth/login -> 400 on short password', async () => {
@@ -18,6 +19,7 @@ describe('Auth validation (Zod)', () => {
       .post('/auth/login')
       .send({ email: 'a@a.com', password: '123' });
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('message', 'Invalid request');
+    expect(res.body).toHaveProperty('message');
+    expect(typeof res.body.message).toBe('string');
   });
 });

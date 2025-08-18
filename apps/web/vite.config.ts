@@ -6,5 +6,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: ['monorepo-web-production.up.railway.app'],
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 5173,
+    allowedHosts: ['monorepo-web-production.up.railway.app'],
   },
 });

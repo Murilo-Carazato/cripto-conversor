@@ -1,17 +1,21 @@
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { auth } from '../middleware/auth';
 import { prisma } from '../../lib/prisma';
+import { z } from 'zod';
+import { validate } from '../middleware/validate';
 
 export const convertRouter = Router();
 
 // GET /convert/dual?from=bitcoin&amount=1
-convertRouter.get('/dual', auth, async (req: Request, res: Response) => {
+const convertQuery = z.object({
+  from: z.string().min(1),
+  amount: z.coerce.number().positive(),
+});
+
+convertRouter.get('/dual', auth, validate({ query: convertQuery }), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const from = String(req.query.from || '').toLowerCase();
-    const amount = Number(req.query.amount || 1);
-    if (!from || !Number.isFinite(amount) || amount <= 0) {
-      return res.status(400).json({ message: 'Parâmetros inválidos. Use: from, amount>0' });
-    }
+    const { from: fromRaw, amount } = req.query as any;
+    const from = String(fromRaw).toLowerCase();
 
     // Validate crypto exists in local catalog
     const exists = await prisma.crypto.findUnique({ where: { id: from } });
@@ -44,8 +48,7 @@ convertRouter.get('/dual', auth, async (req: Request, res: Response) => {
 
     return res.json({ from, amount, brl: { rate: brlRate, result: brlResult }, usd: { rate: usdRate, result: usdResult } });
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Convert dual route error:', e);
-    return res.status(500).json({ message: 'Erro interno na conversão dual' });
+    (req as any).log?.error({ err: e }, 'Convert dual route error');
+    return next(e);
   }
 });

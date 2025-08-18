@@ -65,10 +65,17 @@ cryptosRouter.post('/sync', auth, validate({ body: syncBody }), async (req: Requ
       url.searchParams.set('per_page', String(batchSize));
       url.searchParams.set('page', String(page));
       url.searchParams.set('sparkline', 'false');
+      const headers: Record<string, string> = {
+        accept: 'application/json',
+        'user-agent': 'cripto-conversor/1.0',
+      };
+      const demoKey = process.env.COINGECKO_API_KEY || process.env.X_CG_DEMO_API_KEY;
+      if (demoKey) headers['x-cg-demo-api-key'] = demoKey;
 
-      const resp = await fetch(url.toString(), { headers: { accept: 'application/json' } });
+      const resp = await fetch(url.toString(), { headers });
       if (!resp.ok) {
-        return res.status(502).json({ message: 'Falha ao buscar dados na CoinGecko' });
+        const body = await resp.text().catch(() => '');
+        return res.status(502).json({ message: `Falha ao buscar dados na CoinGecko: ${resp.status} ${resp.statusText}` , details: body?.slice?.(0, 200) });
       }
       const data = (await resp.json()) as Array<{ id: string; name: string; symbol: string }>;
       if (!Array.isArray(data) || data.length === 0) break;

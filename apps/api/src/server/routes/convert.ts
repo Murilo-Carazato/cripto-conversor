@@ -23,20 +23,30 @@ convertRouter.get('/dual', auth, validate({ query: convertQuery }), async (req: 
       return res.status(400).json({ message: 'Criptomoeda inválida' });
     }
 
-    const fetchRate = async (to: 'brl'|'usd') => {
-      const base = process.env.COINGECKO_BASE || 'https://api.coingecko.com/api/v3';
-      const url = new URL(`${base}/simple/price`);
-      url.searchParams.set('ids', from);
-      url.searchParams.set('vs_currencies', to);
-      const resp = await fetch(url.toString(), { headers: { accept: 'application/json' } });
-      if (!resp.ok) throw new Error('Falha CoinGecko');
-      const data = (await resp.json()) as Record<string, Record<string, number>>;
-      const rate = data?.[from]?.[to];
-      if (!rate || !Number.isFinite(rate)) throw new Error('Par não suportado');
-      return rate;
+    // Fetch BRL and USD in a single request to reduce rate-limit pressure
+    const base = process.env.COINGECKO_BASE || 'https://api.coingecko.com/api/v3';
+    const url = new URL(`${base}/simple/price`);
+    url.searchParams.set('ids', from);
+    url.searchParams.set('vs_currencies', 'brl,usd');
+    const headers: Record<string, string> = {
+      accept: 'application/json',
+      'user-agent': 'cripto-conversor/1.0',
     };
+    const demoKey = process.env.COINGECKO_API_KEY || process.env.X_CG_DEMO_API_KEY;
+    if (demoKey) headers['x-cg-demo-api-key'] = demoKey;
 
-    const [brlRate, usdRate] = await Promise.all([fetchRate('brl'), fetchRate('usd')]);
+    const resp = await fetch(url.toString(), { headers });
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => '');
+      return res.status(502).json({ message: `Falha CoinGecko: ${resp.status} ${resp.statusText}`, details: body?.slice?.(0, 200) });
+    }
+    const data = (await resp.json()) as Record<string, Record<'brl' | 'usd', number>>;
+    const brlRate = data?.[from]?.brl;
+    const usdRate = data?.[from]?.usd;
+    if (!Number.isFinite(brlRate) || !Number.isFinite(usdRate)) {
+      return res.status(400).json({ message: 'Par não suportado' });
+    }
+
     const brlResult = amount * brlRate;
     const usdResult = amount * usdRate;
 

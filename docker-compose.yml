@@ -11,10 +11,11 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $$MYSQL_USER --password=$$MYSQL_PASSWORD || exit 1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
       interval: 5s
-      timeout: 3s
-      retries: 10
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   adminer:
     image: adminer
@@ -27,32 +28,41 @@ services:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
-    command: ["sh", "-c", "CI=true pnpm install --no-frozen-lockfile && pnpm prisma:migrate:deploy && pnpm dev"]
+    command: ["sh", "-c", "pnpm install && pnpm prisma:migrate:deploy && pnpm dev"]
     ports:
       - "3001:3001"
     env_file:
       - ./.env
+    environment:
+      - NPM_CONFIG_PRODUCTION=false
     volumes:
       - ./apps/api:/usr/src/app
-      - /usr/src/app/node_modules
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3001/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   web:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
-    command: ["sh", "-c", "CI=true pnpm install --no-frozen-lockfile && pnpm dev --host 0.0.0.0"]
+    command: ["sh", "-c", "pnpm install && pnpm dev --host 0.0.0.0 --port 5173 --strictPort"]
     ports:
       - "5173:5173"
     env_file:
       - ./.env
+    environment:
+      - VITE_API_URL=http://localhost:3001
+      - NPM_CONFIG_PRODUCTION=false
     volumes:
       - ./apps/web:/usr/src/app
-      - /usr/src/app/node_modules
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   db_data:

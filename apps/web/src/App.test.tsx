@@ -30,7 +30,7 @@ describe('App - Fluxo de Login', () => {
     localStorage.clear();
   });
 
-  it('exibe toast de sucesso após login', async () => {
+  it('exibe estado logado e persiste dados após login', async () => {
     renderWithClient(<App />);
 
     const btn = await screen.findByRole('button', { name: /entrar/i });
@@ -44,7 +44,7 @@ describe('App - Fluxo de Login', () => {
     expect(localStorage.getItem('userEmail')).toBe('murilo@gmail.com');
   });
 
-  it('realiza conversão após login e exibe toast e resultados', async () => {
+  it('realiza conversão após login e exibe resultados', async () => {
     renderWithClient(<App />);
 
     // Login

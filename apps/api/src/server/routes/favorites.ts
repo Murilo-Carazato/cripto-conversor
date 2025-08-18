@@ -1,28 +1,36 @@
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { auth } from '../middleware/auth';
 import { prisma } from '../../lib/prisma';
+import { z } from 'zod';
+import { validate } from '../middleware/validate';
 
 export const favoritesRouter = Router();
 
+const favBody = z.object({
+  cryptoId: z.string().min(1).transform((s) => s.toLowerCase()),
+});
+
+const favParams = z.object({
+  cryptoId: z.string().min(1).transform((s) => s.toLowerCase()),
+});
+
 // GET /favorites -> list user's favorites
-favoritesRouter.get('/', auth, async (req: Request, res: Response) => {
+favoritesRouter.get('/', auth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).userId as string;
     const items = await prisma.favorite.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } });
     return res.json(items);
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Favorites list error:', e);
-    return res.status(500).json({ message: 'Erro ao listar favoritos' });
+    (req as any).log?.error({ err: e }, 'Favorites list error');
+    return next(e);
   }
 });
 
 // POST /favorites { cryptoId }
-favoritesRouter.post('/', auth, async (req: Request, res: Response) => {
+favoritesRouter.post('/', auth, validate({ body: favBody }), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).userId as string;
-    const cryptoId = String(req.body?.cryptoId || '').toLowerCase();
-    if (!cryptoId) return res.status(400).json({ message: 'cryptoId é obrigatório' });
+    const { cryptoId } = req.body as any;
     const exists = await prisma.crypto.findUnique({ where: { id: cryptoId } });
     if (!exists) return res.status(400).json({ message: 'Criptomoeda inválida' });
     const fav = await prisma.favorite.upsert({
@@ -32,23 +40,20 @@ favoritesRouter.post('/', auth, async (req: Request, res: Response) => {
     });
     return res.status(201).json(fav);
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Favorites add error:', e);
-    return res.status(500).json({ message: 'Erro ao favoritar' });
+    (req as any).log?.error({ err: e }, 'Favorites add error');
+    return next(e);
   }
 });
 
 // DELETE /favorites/:cryptoId
-favoritesRouter.delete('/:cryptoId', auth, async (req: Request, res: Response) => {
+favoritesRouter.delete('/:cryptoId', auth, validate({ params: favParams }), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).userId as string;
-    const cryptoId = String(req.params.cryptoId || '').toLowerCase();
-    if (!cryptoId) return res.status(400).json({ message: 'cryptoId é obrigatório' });
+    const { cryptoId } = req.params as any;
     await prisma.favorite.delete({ where: { userId_cryptoId: { userId, cryptoId } } });
     return res.status(204).end();
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Favorites delete error:', e);
-    return res.status(500).json({ message: 'Erro ao desfavoritar' });
+    (req as any).log?.error({ err: e }, 'Favorites delete error');
+    return next(e);
   }
 });

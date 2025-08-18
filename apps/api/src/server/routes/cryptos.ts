@@ -1,16 +1,22 @@
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { prisma } from '../../lib/prisma';
 import { auth } from '../middleware/auth';
+import { z } from 'zod';
+import { validate } from '../middleware/validate';
 
 export const cryptosRouter = Router();
 
+const listQuery = z.object({
+  q: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+});
+
 // GET /cryptos?q=bit&limit=100
 // Reads cryptos from the local DB for performance and FK integrity
-cryptosRouter.get('/', async (req: Request, res: Response) => {
+cryptosRouter.get('/', validate({ query: listQuery }), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const q = String(req.query.q || '').trim().toLowerCase();
-    const limitRaw = Number(req.query.limit || 100);
-    const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(500, limitRaw)) : 100;
+    const { q: qRaw, limit } = req.query as any;
+    const q = (qRaw ? String(qRaw) : '').trim().toLowerCase();
 
     const where = q
       ? {
@@ -31,19 +37,20 @@ cryptosRouter.get('/', async (req: Request, res: Response) => {
 
     return res.json(items);
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Cryptos list error:', e);
-    return res.status(500).json({ message: 'Erro ao listar criptomoedas' });
+    (req as any).log?.error({ err: e }, 'Cryptos list error');
+    return next(e);
   }
 });
 
 // POST /cryptos/sync { limit?: number }
 // Sync top N coins from CoinGecko into local DB
-cryptosRouter.post('/sync', auth, async (req: Request, res: Response) => {
+const syncBody = z.object({ limit: z.coerce.number().int().min(1).max(1000).default(200) });
+
+cryptosRouter.post('/sync', auth, validate({ body: syncBody }), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const base = process.env.COINGECKO_BASE || 'https://api.coingecko.com/api/v3';
-    const requested = Number(req.body?.limit || 200);
-    const target = Number.isFinite(requested) ? Math.max(1, Math.min(1000, requested)) : 200;
+    const { limit } = req.body as any;
+    const target = limit;
 
     const perPage = 250; // API max per_page is 250
     let page = 1;
@@ -82,8 +89,7 @@ cryptosRouter.post('/sync', auth, async (req: Request, res: Response) => {
     const count = await prisma.crypto.count();
     return res.status(200).json({ message: 'Sincronização concluída', synced: stored, total: count });
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Cryptos sync error:', e);
-    return res.status(500).json({ message: 'Erro ao sincronizar criptomoedas' });
+    (req as any).log?.error({ err: e }, 'Cryptos sync error');
+    return next(e);
   }
 });

@@ -1,0 +1,10 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "echo 'Use separate services for apps/api and apps/web'"
+
+# This file helps Railway understand the monorepo structure
+# Create separate services and configure Root Directory:
+# - Service 1: Root Directory = "apps/api"  
+# - Service 2: Root Directory = "apps/web"
